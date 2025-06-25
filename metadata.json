@@ -1,0 +1,5 @@
+{
+  "name": "Granja Suínos Integrada",
+  "description": "Um sistema de controle para gerenciamento de granja de suínos integrada, com funcionalidades para gestão de ração, cálculo de mortalidade, GPD, gestão de barracões, calendário, rendimento e ordens de serviço.",
+  "requestFramePermissions": []
+}
