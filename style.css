@@ -1,0 +1,485 @@
+/* Reset and Base Styles */
+:root {
+    --primary-color: #1a535c; /* Dark Teal */
+    --secondary-color: #4ecdc4; /* Medium Aquamarine */
+    --accent-color: #ff6b6b; /* Coral Red */
+    --light-color: #f7fff7; /* Mint Cream (almost white) */
+    --dark-color: #1e2019;  /* Rich Black FOGRA 39 */
+    --success-color: #27ae60; /* Green */
+    --warning-color: #f39c12; /* Orange */
+    --neutral-gray: #dde1e9; /* Light gray for borders/backgrounds */
+    --text-color: #333;
+    --font-family-sans: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    --border-radius: 6px;
+    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 16px; /* Base font size */
+}
+
+body {
+    font-family: var(--font-family-sans);
+    background-color: var(--light-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+main.container {
+    flex-grow: 1;
+}
+
+/* Header */
+header {
+    background-color: var(--primary-color);
+    color: var(--light-color);
+    padding: 25px 0;
+    text-align: center;
+    margin-bottom: 30px;
+    box-shadow: var(--box-shadow);
+}
+
+header h1 {
+    font-size: 2.2rem;
+    font-weight: 500;
+}
+
+/* Headings */
+h2 {
+    font-size: 1.8rem;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+h3 {
+    font-size: 1.4rem;
+    color: var(--dark-color);
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+    border-bottom: 2px solid var(--neutral-gray);
+}
+
+.tab-button {
+    padding: 12px 22px;
+    background-color: transparent;
+    color: var(--primary-color);
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    font-size: 1rem;
+    margin-right: 8px;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.tab-button:hover {
+    background-color: rgba(78, 205, 196, 0.1); /* Light secondary color */
+    border-bottom-color: var(--secondary-color);
+}
+
+.tab-button.active {
+    background-color: var(--secondary-color);
+    color: var(--light-color);
+    border-bottom-color: var(--secondary-color);
+    font-weight: bold;
+}
+
+.tab-content {
+    display: none;
+    padding: 25px;
+    background-color: white;
+    border-radius: 0 var(--border-radius) var(--border-radius) var(--border-radius);
+    box-shadow: var(--box-shadow);
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--dark-color);
+    font-size: 0.95rem;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="tel"],
+input[type="date"],
+select,
+textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--neutral-gray);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    font-family: var(--font-family-sans);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.3);
+}
+
+/* Buttons */
+button, .button { /* Added .button for semantic buttons that are not <button> */
+    background-color: var(--secondary-color);
+    color: var(--light-color);
+    border: none;
+    padding: 12px 25px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 10px; /* Spacing between buttons */
+    margin-bottom: 10px; /* Spacing for wrapped buttons */
+}
+
+button:hover, .button:hover {
+    background-color: #3db8ae; /* Darker secondary */
+}
+button:active, .button:active {
+    transform: translateY(1px);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+}
+.btn-success:hover {
+    background-color: #229954; /* Darker success */
+}
+
+.btn-danger {
+    background-color: var(--accent-color);
+}
+.btn-danger:hover {
+    background-color: #e85a5a; /* Darker accent */
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 25px;
+    box-shadow: var(--box-shadow);
+    border-radius: var(--border-radius);
+    overflow: hidden; /* For border-radius on table */
+}
+
+th, td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--neutral-gray);
+}
+
+th {
+    background-color: var(--primary-color);
+    color: var(--light-color);
+    font-weight: 500;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #f8f9fa; /* Slightly off-white for even rows */
+}
+
+tbody tr:hover {
+    background-color: rgba(78, 205, 196, 0.1); /* Light secondary on hover */
+}
+
+table caption {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    font-weight: 500;
+    color: var(--primary-color);
+    text-align: left;
+}
+
+/* Result Box */
+.result-box {
+    background-color: #e8f8f5; /* Light teal background */
+    padding: 20px;
+    border-radius: var(--border-radius);
+    margin-top: 25px;
+    border-left: 5px solid var(--secondary-color);
+}
+.result-box h3 {
+    margin-top: 0;
+    color: var(--primary-color);
+}
+.result-box p {
+    margin-bottom: 8px;
+    font-size: 1.05rem;
+}
+
+/* Calendar */
+.calendar {
+    width: 100%;
+    margin-top: 25px;
+    background-color: white;
+    padding: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.calendar-header h3 {
+    margin-bottom: 0;
+}
+.calendar-header button {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    padding: 5px 10px;
+}
+.calendar-header button:hover {
+    background-color: rgba(26, 83, 92, 0.1);
+}
+
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+}
+
+.calendar-day-header {
+    font-weight: bold;
+    text-align: center;
+    padding: 10px 5px;
+    background-color: var(--neutral-gray);
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+}
+
+.calendar-day {
+    padding: 10px;
+    border: 1px solid var(--neutral-gray);
+    min-height: 100px;
+    background-color: white;
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+    position: relative; /* For event positioning if needed */
+}
+.calendar-day:empty {
+    background-color: transparent;
+    border: none;
+}
+
+.event {
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 3px 6px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: block; /* Make events take full width */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.event:hover {
+    opacity: 0.85;
+}
+
+/* Modals */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1000; /* High z-index */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5); /* Dimmed background */
+    animation: fadeInModal 0.3s ease-out;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 8% auto;
+    padding: 30px;
+    border-radius: var(--border-radius);
+    width: 90%;
+    max-width: 550px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
+    animation: slideInModal 0.3s ease-out;
+}
+
+@keyframes fadeInModal {
+    from { background-color: rgba(0,0,0,0); }
+    to { background-color: rgba(0,0,0,0.5); }
+}
+@keyframes slideInModal {
+    from { transform: translateY(-30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+
+.modal .close {
+    color: #888;
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 30px;
+    font-weight: bold;
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
+}
+
+.modal .close:hover,
+.modal .close:focus {
+    color: var(--dark-color);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal h2 { /* For modal titles */
+    margin-top: 0;
+    margin-bottom: 25px;
+}
+
+.color-option {
+    display: inline-block;
+    width: 25px;
+    height: 25px;
+    margin-right: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 50%; /* Circular color options */
+    transition: border-color 0.2s;
+}
+.color-option:hover, .color-option[style*="2px solid rgb(0, 0, 0)"] { /* Current selection or hover */
+    border-color: var(--dark-color);
+}
+
+
+/* Footer */
+footer {
+    background-color: var(--dark-color);
+    color: var(--light-color);
+    text-align: center;
+    padding: 20px 0;
+    margin-top: 40px; /* Ensure space above footer */
+    font-size: 0.9rem;
+}
+footer p {
+    margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 1.8rem;
+    }
+    .tabs {
+        flex-direction: column;
+    }
+    .tab-button {
+        margin-right: 0;
+        margin-bottom: 5px;
+        border-radius: var(--border-radius);
+    }
+    .tab-content {
+        border-radius: var(--border-radius);
+        padding: 20px;
+    }
+    .calendar-day {
+        min-height: 80px; /* Adjusted for smaller screens */
+        font-size: 0.85rem;
+        padding: 8px;
+    }
+    .event {
+        font-size: 0.75rem;
+    }
+    .modal-content {
+        margin: 15% auto;
+        padding: 20px;
+    }
+    button, .button {
+        padding: 10px 20px;
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 480px) {
+    html {
+        font-size: 15px;
+    }
+    .container {
+        width: 95%;
+        padding: 15px;
+    }
+    header h1 {
+        font-size: 1.6rem;
+    }
+    h2 {
+        font-size: 1.5rem;
+    }
+    h3 {
+        font-size: 1.2rem;
+    }
+    .calendar-day {
+        min-height: 70px;
+    }
+    .calendar-day-header {
+        padding: 8px 3px;
+        font-size: 0.8rem;
+    }
+}

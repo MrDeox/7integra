@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Controle - Granja de Suínos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Sistema de Controle - Granja de Suínos Integrada</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <nav class="tabs" aria-label="Navegação Principal">
+            <button class="tab-button active" data-tab="racao" aria-controls="racao" role="tab" aria-selected="true">Gestão de Ração</button>
+            <button class="tab-button" data-tab="mortalidade" aria-controls="mortalidade" role="tab" aria-selected="false">Cálculo de Mortalidade</button>
+            <button class="tab-button" data-tab="gpd" aria-controls="gpd" role="tab" aria-selected="false">Cálculo de GPD</button>
+            <button class="tab-button" data-tab="barracoes" aria-controls="barracoes" role="tab" aria-selected="false">Gestão de Barracões</button>
+            <button class="tab-button" data-tab="calendario" aria-controls="calendario" role="tab" aria-selected="false">Calendário</button>
+            <button class="tab-button" data-tab="rendimento" aria-controls="rendimento" role="tab" aria-selected="false">Rendimento por Caminhão</button>
+            <button class="tab-button" data-tab="os" aria-controls="os" role="tab" aria-selected="false">Ordens de Serviço</button>
+            <button class="tab-button" data-tab="contato" aria-controls="contato" role="tab" aria-selected="false">Contato</button>
+        </nav>
+
+        <section id="racao" class="tab-content active" role="tabpanel" aria-labelledby="racao-tab">
+            <h2>Gestão de Ração</h2>
+            <form>
+                <div class="form-group">
+                    <label for="racao-quantidade">Quantidade Recebida (kg):</label>
+                    <input type="number" id="racao-quantidade" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="silos-quantidade">Número de Silo(s):</label>
+                    <input type="number" id="silos-quantidade" min="1" value="1" required>
+                </div>
+
+                <div id="silos-container">
+                    <!-- Silo inputs will be added here dynamically -->
+                </div>
+
+                <button type="button" id="distribuir-auto" class="btn-success">Distribuir Automaticamente</button>
+                <button type="button" id="salvar-racao">Salvar Distribuição</button>
+            </form>
+            <div id="racao-result" class="result-box" style="display: none;" aria-live="polite">
+                <h3>Resumo da Distribuição</h3>
+                <div id="racao-summary"></div>
+            </div>
+        </section>
+
+        <section id="mortalidade" class="tab-content" role="tabpanel" aria-labelledby="mortalidade-tab">
+            <h2>Cálculo de Mortalidade</h2>
+            <form>
+                <div class="form-group">
+                    <label for="animais-iniciais">Número Inicial de Animais:</label>
+                    <input type="number" id="animais-iniciais" min="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="animais-baixas">Número de Baixas:</label>
+                    <input type="number" id="animais-baixas" min="0" required>
+                </div>
+
+                <button type="button" id="calcular-mortalidade">Calcular Mortalidade</button>
+            </form>
+            <div id="mortalidade-result" class="result-box" style="display: none;" aria-live="polite">
+                <h3>Resultado</h3>
+                <p>Animais Atuais: <span id="animais-atuais"></span></p>
+                <p>Taxa de Mortalidade: <span id="taxa-mortalidade"></span>%</p>
+            </div>
+        </section>
+
+        <section id="gpd" class="tab-content" role="tabpanel" aria-labelledby="gpd-tab">
+            <h2>Cálculo de GPD (Ganho de Peso Diário)</h2>
+            <form>
+                <div class="form-group">
+                    <label for="peso-inicial">Peso Inicial (kg):</label>
+                    <input type="number" id="peso-inicial" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="peso-atual">Peso Atual (kg):</label>
+                    <input type="number" id="peso-atual" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="dias-gpd">Dias entre Pesagens:</label>
+                    <input type="number" id="dias-gpd" min="1" required>
+                </div>
+
+                <button type="button" id="calcular-gpd">Calcular GPD</button>
+            </form>
+            <div id="gpd-result" class="result-box" style="display: none;" aria-live="polite">
+                <h3>Resultado</h3>
+                <p>Ganho de Peso Diário (GPD): <span id="valor-gpd"></span> kg/dia</p>
+            </div>
+        </section>
+
+        <section id="barracoes" class="tab-content" role="tabpanel" aria-labelledby="barracoes-tab">
+            <h2>Gestão de Barracões</h2>
+            <form>
+                <div class="form-group">
+                    <label for="barracoes-quantidade">Número de Barracões:</label>
+                    <input type="number" id="barracoes-quantidade" min="1" value="1" required>
+                </div>
+
+                <button type="button" id="gerar-barracoes">Gerar Formulários</button>
+            </form>
+            <div id="barracoes-container">
+                <!-- Barracão inputs will be added here dynamically -->
+            </div>
+
+            <button type="button" id="salvar-barracoes" style="display: none;">Salvar Dados</button>
+
+            <div id="barracoes-summary" style="margin-top: 20px; display: none;" aria-live="polite">
+                <h3>Resumo dos Barracões</h3>
+                <table id="barracoes-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Barracão</th>
+                            <th scope="col">Machos</th>
+                            <th scope="col">Fêmeas</th>
+                            <th scope="col">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="calendario" class="tab-content" role="tabpanel" aria-labelledby="calendario-tab">
+            <h2>Calendário Interativo</h2>
+
+            <button type="button" id="adicionar-evento">Adicionar Evento</button>
+
+            <div class="calendar">
+                <div class="calendar-header">
+                    <button type="button" id="prev-month" aria-label="Mês anterior">&lt; Mês Anterior</button>
+                    <h3 id="current-month" aria-live="polite">Mês Ano</h3>
+                    <button type="button" id="next-month" aria-label="Próximo mês">Próximo Mês &gt;</button>
+                </div>
+
+                <div class="calendar-grid" id="calendar-days-header" role="rowgroup">
+                    <div class="calendar-day-header" role="columnheader">Dom</div>
+                    <div class="calendar-day-header" role="columnheader">Seg</div>
+                    <div class="calendar-day-header" role="columnheader">Ter</div>
+                    <div class="calendar-day-header" role="columnheader">Qua</div>
+                    <div class="calendar-day-header" role="columnheader">Qui</div>
+                    <div class="calendar-day-header" role="columnheader">Sex</div>
+                    <div class="calendar-day-header" role="columnheader">Sáb</div>
+                </div>
+
+                <div class="calendar-grid" id="calendar-days" role="grid"></div>
+            </div>
+        </section>
+
+        <section id="rendimento" class="tab-content" role="tabpanel" aria-labelledby="rendimento-tab">
+            <h2>Cálculo de Rendimento por Caminhão</h2>
+            <form>
+                <div class="form-group">
+                    <label for="peso-caminhao">Peso Médio por Caminhão (kg):</label>
+                    <input type="number" id="peso-caminhao" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="valor-kg">Valor por Quilo (R$):</label>
+                    <input type="number" id="valor-kg" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="caminhoes-dia">Número de Caminhões por Dia:</label>
+                    <input type="number" id="caminhoes-dia" min="1" value="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="dias-lote">Dias de Envio do Lote:</label>
+                    <input type="number" id="dias-lote" min="1" value="1" required>
+                </div>
+
+                <button type="button" id="calcular-rendimento">Calcular Rendimento</button>
+            </form>
+            <div id="rendimento-result" class="result-box" style="display: none;" aria-live="polite">
+                <h3>Resultado</h3>
+                <p>Valor Bruto por Caminhão: R$ <span id="valor-caminhao"></span></p>
+                <p>Valor Bruto por Dia: R$ <span id="valor-dia"></span></p>
+                <p>Valor Bruto Total do Lote: R$ <span id="valor-lote"></span></p>
+            </div>
+        </section>
+
+        <section id="os" class="tab-content" role="tabpanel" aria-labelledby="os-tab">
+            <h2>Ordens de Serviço (OS)</h2>
+
+            <button type="button" id="nova-os">Nova Ordem de Serviço</button>
+
+            <table id="os-table">
+                <caption>Lista de Ordens de Serviço</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Título</th>
+                        <th scope="col">Descrição</th>
+                        <th scope="col">Prioridade</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section id="contato" class="tab-content" role="tabpanel" aria-labelledby="contato-tab">
+            <h2>Contato com o Administrador</h2>
+            <form id="contact-form">
+                <div class="form-group">
+                    <label for="contato-nome">Seu Nome:</label>
+                    <input type="text" id="contato-nome" name="nome" required autocomplete="name">
+                </div>
+
+                <div class="form-group">
+                    <label for="contato-email">Seu Email:</label>
+                    <input type="email" id="contato-email" name="email" required autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="contato-telefone">Seu Telefone:</label>
+                    <input type="tel" id="contato-telefone" name="telefone" autocomplete="tel">
+                </div>
+
+                <div class="form-group">
+                    <label for="contato-mensagem">Mensagem:</label>
+                    <textarea id="contato-mensagem" name="mensagem" rows="5" required></textarea>
+                </div>
+
+                <button type="button" id="enviar-contato">Enviar Mensagem</button>
+            </form>
+            <div id="contato-result" class="result-box" style="display: none; margin-top: 20px;" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <!-- Modal para Adicionar Evento -->
+    <div id="event-modal" class="modal" role="dialog" aria-labelledby="event-modal-title" aria-hidden="true">
+        <div class="modal-content">
+            <button class="close" aria-label="Fechar modal">&times;</button>
+            <h2 id="event-modal-title">Adicionar Evento</h2>
+            <form id="event-form">
+                <div class="form-group">
+                    <label for="event-title">Título do Evento:</label>
+                    <input type="text" id="event-title" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="event-date">Data:</label>
+                    <input type="date" id="event-date" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="event-description">Descrição:</label>
+                    <textarea id="event-description" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label id="event-color-label">Cor do Evento:</label>
+                    <div role="radiogroup" aria-labelledby="event-color-label">
+                        <button type="button" class="color-option" style="background-color: #3498db;" data-color="#3498db" aria-label="Azul"></button>
+                        <button type="button" class="color-option" style="background-color: #e74c3c;" data-color="#e74c3c" aria-label="Vermelho"></button>
+                        <button type="button" class="color-option" style="background-color: #2ecc71;" data-color="#2ecc71" aria-label="Verde"></button>
+                        <button type="button" class="color-option" style="background-color: #f39c12;" data-color="#f39c12" aria-label="Laranja"></button>
+                        <button type="button" class="color-option" style="background-color: #9b59b6;" data-color="#9b59b6" aria-label="Roxo"></button>
+                        <input type="hidden" id="event-color" value="#3498db">
+                    </div>
+                </div>
+
+                <button type="button" id="save-event">Salvar Evento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para OS -->
+    <div id="os-modal" class="modal" role="dialog" aria-labelledby="os-modal-title-h2" aria-hidden="true">
+        <div class="modal-content">
+            <button class="close" aria-label="Fechar modal">&times;</button>
+            <h2 id="os-modal-title-h2">Nova Ordem de Serviço</h2>
+            <form id="os-form">
+                <div class="form-group">
+                    <label for="os-titulo">Título:</label>
+                    <input type="text" id="os-titulo" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="os-descricao">Descrição:</label>
+                    <textarea id="os-descricao" rows="5" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="os-prioridade">Prioridade:</label>
+                    <select id="os-prioridade">
+                        <option value="Baixa">Baixa</option>
+                        <option value="Média" selected>Média</option>
+                        <option value="Alta">Alta</option>
+                        <option value="Urgente">Urgente</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="os-status">Status:</label>
+                    <select id="os-status">
+                        <option value="Aberto" selected>Aberto</option>
+                        <option value="Em andamento">Em andamento</option>
+                        <option value="Concluído">Concluído</option>
+                    </select>
+                </div>
+
+                <input type="hidden" id="os-id">
+
+                <button type="button" id="save-os">Salvar OS</button>
+                <button type="button" id="delete-os" class="btn-danger" style="display: none;">Excluir OS</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 Sistema de Controle de Granja. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
