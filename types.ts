@@ -1,5 +1,5 @@
 export enum TabId {
-  Dashboard = 'dashboard', // Added Dashboard
+  Dashboard = 'dashboard',
   Racao = 'racao',
   Mortalidade = 'mortalidade',
   GPD = 'gpd',
@@ -8,6 +8,7 @@ export enum TabId {
   Rendimento = 'rendimento',
   OS = 'os',
   Contato = 'contato',
+  Embarques = 'embarques', // Added
 }
 
 export type UserRole = 'admin' | 'client';
@@ -23,11 +24,42 @@ export interface SiloData {
   racaoAtual: number;
 }
 
+// Simplified BarracaoData
 export interface BarracaoData {
   id: string; 
-  machos: number;
-  femeas: number;
+  nome: string;
 }
+
+// New: Represents a batch of pigs
+export interface LoteData {
+  id: string;
+  barracaoId: string;
+  nome: string; // e.g., "Lote 2024-07-A"
+  dataEntrada: string; // YYYY-MM-DD
+  idadeInicial: number; // in days
+  pesoInicial: number; // in kg
+  quantidadeInicial: number;
+  quantidadeAtual: number;
+}
+
+// New: Represents a mortality log entry
+export interface MortalidadeEntry {
+  id: string;
+  loteId: string;
+  data: string; // YYYY-MM-DD
+  quantidade: number;
+  causa?: string;
+}
+
+// New: Represents a shipment log entry
+export interface EmbarqueEntry {
+  id: string;
+  loteId: string;
+  data: string; // YYYY-MM-DD
+  quantidadeAnimais: number;
+  quantidadeCaminhoes: number;
+}
+
 
 export interface CalendarEvent {
   id: string;
@@ -48,9 +80,17 @@ export interface OrdemServico {
   status: OsStatus;
 }
 
-// Added for SidebarNav
 export interface TabItem {
   id: TabId;
   label: string;
-  icon?: string; // e.g., 'fas fa-tachometer-alt'
+  icon?: string; 
+}
+
+export interface ActivityLogItem {
+  id: string;
+  timestamp: string; // ISO string
+  description: string;
+  icon?: string;
+  type: 'os' | 'event' | 'barracao' | 'generic' | 'lote' | 'mortalidade' | 'embarque'; // Added new types
+  userId?: string; // Optional: to associate activity with a user
 }

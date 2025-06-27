@@ -1,16 +1,20 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useContext } from 'react';
 import { CalendarEvent } from '../types';
 import Button from './ui/Button';
 import EventModal from './EventModal';
+import { AppContext } from '../App'; // Assuming AppContext is exported and provides currentUser
 
 const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 const CalendarView: React.FC = () => {
+  const appContext = useContext(AppContext); // For activity log user context
+  const currentUser = appContext?.currentUser;
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | undefined>(undefined);
+  // No need for selectedEvent, eventToEdit handles both new and edit states
   const [eventToEdit, setEventToEdit] = useState<CalendarEvent | undefined>(undefined);
 
 
@@ -30,13 +34,13 @@ const CalendarView: React.FC = () => {
       const dayEvents = events.filter(event => event.date === dateStr);
       
       days.push(
-        <div key={day} className="p-2 border border-slate-200 h-28 sm:h-32 overflow-y-auto relative group">
-          <div className="font-semibold text-sm mb-1">{day}</div>
+        <div key={day} className="p-2 border border-slate-200 h-28 sm:h-32 overflow-y-auto relative group bg-white hover:bg-slate-50 transition-colors duration-150">
+          <div className="font-semibold text-sm mb-1 text-slate-700">{day}</div>
           <div className="space-y-1">
             {dayEvents.map(event => (
               <div
                 key={event.id}
-                className="text-xs p-1.5 rounded text-white truncate cursor-pointer hover:opacity-80"
+                className="text-xs p-1.5 rounded text-white truncate cursor-pointer hover:opacity-80 transition-opacity"
                 style={{ backgroundColor: event.color }}
                 title={`${event.title}${event.description ? ` - ${event.description}` : ''}`}
                 onClick={() => { setEventToEdit(event); setIsModalOpen(true); }}
@@ -45,7 +49,6 @@ const CalendarView: React.FC = () => {
               </div>
             ))}
           </div>
-           {/* Add event button for empty day (optional, could be complex UX) */}
         </div>
       );
     }
@@ -61,13 +64,18 @@ const CalendarView: React.FC = () => {
   };
 
   const handleSaveEvent = (event: CalendarEvent) => {
-    if (eventToEdit) { // Editing existing event
+    if (eventToEdit) { 
        setEvents(prev => prev.map(e => e.id === event.id ? event : e));
-    } else { // Adding new event
+    } else { 
        setEvents(prev => [...prev, event]);
     }
     setIsModalOpen(false);
     setEventToEdit(undefined);
+  };
+
+  const handleDeleteEvent = (eventId: string) => {
+    setEvents(prev => prev.filter(e => e.id !== eventId));
+    // Activity log for deletion is handled within EventModal to have access to event title
   };
   
   useEffect(() => {
@@ -84,23 +92,23 @@ const CalendarView: React.FC = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
         <h2 className="text-2xl font-semibold text-slate-800">Calendário Interativo</h2>
-        <Button onClick={() => { setEventToEdit(undefined); setIsModalOpen(true); }}>
+        <Button onClick={() => { setEventToEdit(undefined); setIsModalOpen(true); }} variant="primary">
           <i className="fas fa-plus mr-2"></i>Adicionar Evento
         </Button>
       </div>
 
-      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-xl">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-xl border border-slate-200">
         <div className="flex justify-between items-center mb-4">
-          <Button onClick={handlePrevMonth} variant="light" size="sm">
+          <Button onClick={handlePrevMonth} variant="light" size="sm" className="!px-3 !py-1.5">
             <i className="fas fa-chevron-left mr-1 sm:mr-2"></i>
             <span className="hidden sm:inline">Anterior</span>
           </Button>
-          <h3 className="text-lg sm:text-xl font-semibold text-slate-700 text-center">
+          <h3 className="text-lg sm:text-xl font-semibold text-slate-700 text-center capitalize">
             {currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
           </h3>
-          <Button onClick={handleNextMonth} variant="light" size="sm">
+          <Button onClick={handleNextMonth} variant="light" size="sm" className="!px-3 !py-1.5">
             <span className="hidden sm:inline">Próximo</span>
             <i className="fas fa-chevron-right ml-1 sm:ml-2"></i>
           </Button>
@@ -119,6 +127,7 @@ const CalendarView: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => { setIsModalOpen(false); setEventToEdit(undefined); }}
         onSave={handleSaveEvent}
+        onDelete={handleDeleteEvent} // Pass the delete handler
         eventData={eventToEdit}
       />
     </div>
