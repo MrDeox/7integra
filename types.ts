@@ -1,3 +1,4 @@
+
 export enum TabId {
   Dashboard = 'dashboard',
   Racao = 'racao',
@@ -40,6 +41,7 @@ export interface LoteData {
   pesoInicial: number; // in kg
   quantidadeInicial: number;
   quantidadeAtual: number;
+  sexo: 'macho' | 'fêmea' | 'misto';
 }
 
 // New: Represents a mortality log entry

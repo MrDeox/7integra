@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useMemo, useContext } from 'react';
 import { BarracaoData, LoteData } from '../types';
 import { getBarracoes, saveBarracoes, getLotes, saveLotes } from '../utils/dataManager';
@@ -6,6 +7,7 @@ import Button from './ui/Button';
 import Modal from './ui/Modal';
 import { addActivity } from '../utils/activityLog';
 import { AppContext } from '../App';
+import Select from './ui/Select';
 
 const BarracoesManagement: React.FC = () => {
     const appContext = useContext(AppContext);
@@ -20,7 +22,7 @@ const BarracoesManagement: React.FC = () => {
 
     const [isLoteModalOpen, setIsLoteModalOpen] = useState(false);
     const [editingLote, setEditingLote] = useState<LoteData | null>(null);
-    const [loteForm, setLoteForm] = useState<Partial<LoteData>>({});
+    const [loteForm, setLoteForm] = useState<Partial<LoteData>>({ sexo: 'misto' });
 
     useEffect(() => {
         setBarracoes(getBarracoes());
@@ -76,8 +78,8 @@ const BarracoesManagement: React.FC = () => {
 
     // --- Lote Logic ---
     const handleSaveLote = () => {
-        const { barracaoId, nome, dataEntrada, idadeInicial, pesoInicial, quantidadeInicial } = loteForm;
-        if (!barracaoId || !nome?.trim() || !dataEntrada || !idadeInicial || !pesoInicial || !quantidadeInicial) {
+        const { barracaoId, nome, dataEntrada, idadeInicial, pesoInicial, quantidadeInicial, sexo } = loteForm;
+        if (!barracaoId || !nome?.trim() || !dataEntrada || !idadeInicial || !pesoInicial || !quantidadeInicial || !sexo) {
             alert('Todos os campos do lote são obrigatórios.');
             return;
         }
@@ -96,6 +98,7 @@ const BarracoesManagement: React.FC = () => {
                 pesoInicial,
                 quantidadeInicial,
                 quantidadeAtual: quantidadeInicial,
+                sexo,
             };
             updatedLotes = [...lotes, newLote];
             addActivity(`Novo lote "${nome}" adicionado ao barracão.`, 'lote', undefined, currentUser);
@@ -119,22 +122,33 @@ const BarracoesManagement: React.FC = () => {
 
     const openLoteModal = (barracaoId: string, lote: LoteData | null = null) => {
         setEditingLote(lote);
-        setLoteForm(lote ? { ...lote } : { barracaoId, dataEntrada: new Date().toISOString().split('T')[0] });
+        setLoteForm(lote ? { ...lote } : { barracaoId, dataEntrada: new Date().toISOString().split('T')[0], sexo: 'misto' });
         setIsLoteModalOpen(true);
     };
     
     const closeLoteModal = () => {
         setIsLoteModalOpen(false);
         setEditingLote(null);
-        setLoteForm({});
+        setLoteForm({ sexo: 'misto' });
     };
     
-    const handleLoteFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleLoteFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
+        const isNumberInput = e.target instanceof HTMLInputElement && type === 'number';
+        
         setLoteForm(prev => ({
             ...prev,
-            [name]: type === 'number' ? parseFloat(value) || 0 : value
+            [name]: isNumberInput ? parseFloat(value) || 0 : value
         }));
+    };
+
+    const sexLabel = (sexo?: 'macho' | 'fêmea' | 'misto') => {
+        switch (sexo) {
+            case 'macho': return 'Machos';
+            case 'fêmea': return 'Fêmeas';
+            case 'misto': return 'Misto';
+            default: return '-';
+        }
     };
 
     return (
@@ -178,6 +192,7 @@ const BarracoesManagement: React.FC = () => {
                                                 <th className="p-2">Lote</th>
                                                 <th className="p-2">Qtd. Atual</th>
                                                 <th className="p-2">Idade Inicial</th>
+                                                <th className="p-2">Sexo</th>
                                                 <th className="p-2">Data Entrada</th>
                                                 <th className="p-2">Ações</th>
                                             </tr>
@@ -188,6 +203,7 @@ const BarracoesManagement: React.FC = () => {
                                                     <td className="p-2 font-medium">{lote.nome}</td>
                                                     <td className="p-2">{lote.quantidadeAtual} / {lote.quantidadeInicial}</td>
                                                     <td className="p-2">{lote.idadeInicial} dias</td>
+                                                    <td className="p-2">{sexLabel(lote.sexo)}</td>
                                                     <td className="p-2">{new Date(lote.dataEntrada).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</td>
                                                     <td className="p-2 flex gap-2">
                                                         <Button size="sm" variant="light" onClick={() => openLoteModal(barracao.id, lote)}><i className="fas fa-edit"></i></Button>
@@ -227,6 +243,18 @@ const BarracoesManagement: React.FC = () => {
                     <Input name="idadeInicial" label="Idade Inicial (dias)" id="lote-idade" type="number" min="0" value={loteForm.idadeInicial || ''} onChange={handleLoteFormChange} />
                     <Input name="pesoInicial" label="Peso Inicial Médio (kg)" id="lote-peso" type="number" min="0" step="0.1" value={loteForm.pesoInicial || ''} onChange={handleLoteFormChange} />
                     <Input name="quantidadeInicial" label="Quantidade de Animais" id="lote-qtd" type="number" min="1" value={loteForm.quantidadeInicial || ''} onChange={handleLoteFormChange} disabled={!!editingLote} />
+                    <Select
+                        name="sexo"
+                        label="Sexo do Lote"
+                        id="lote-sexo"
+                        value={loteForm.sexo || 'misto'}
+                        onChange={handleLoteFormChange}
+                        options={[
+                            { value: 'misto', label: 'Misto' },
+                            { value: 'macho', label: 'Machos' },
+                            { value: 'fêmea', label: 'Fêmeas' },
+                        ]}
+                    />
                 </div>
                 {editingLote && <p className="text-xs text-slate-500 mt-2">A quantidade inicial não pode ser alterada após a criação do lote.</p>}
                  <div className="flex justify-end gap-2 mt-6">

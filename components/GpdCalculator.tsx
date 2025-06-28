@@ -1,9 +1,12 @@
 
-import React, { useState, useCallback, useContext, useEffect } from 'react';
+import React, { useState, useCallback, useContext, useEffect, useMemo } from 'react';
 import Input from './ui/Input';
 import Button from './ui/Button';
+import Select from './ui/Select';
 import { AppContext } from '../App';
 import { GPD_REFERENCE_TABLE, findGpdReference, GpdReferenceItem } from '../utils/gpdData';
+import { getLotes, getBarracoes } from '../utils/dataManager';
+import { LoteData, BarracaoData } from '../types';
 import GpdReferenceModal from './GpdReferenceModal';
 
 type PerformanceStatus = 'ideal' | 'abaixo' | 'acima' | 'sem_referencia' | 'erro_calculo' | 'dados_insuficientes' | 'aguardando_dados';
@@ -14,9 +17,9 @@ interface GpdResult {
   performanceStatus?: PerformanceStatus;
   performanceMessage?: string;
   referenceAgeRange?: string;
-  idadeAtualCliente?: number;
-  pesoAtualCliente?: number;
-  pesoInicialTeorico?: number;
+  idadeAtual?: number;
+  pesoAtual?: number;
+  pesoInicial?: number;
   diasConsiderados?: number;
 }
 
@@ -30,17 +33,25 @@ const GpdCalculator: React.FC = () => {
   const [diasGPDAdmin, setDiasGPDAdmin] = useState<number>(0);
 
   // Client state
-  const [idadeAtualCliente, setIdadeAtualCliente] = useState<number>(() => {
-    const storedAge = localStorage.getItem('gpdClienteIdade');
-    return storedAge ? parseInt(storedAge, 10) : 0;
-  });
-  const [pesoAtualCliente, setPesoAtualCliente] = useState<number>(() => {
-    const storedWeight = localStorage.getItem('gpdClientePeso');
-    return storedWeight ? parseFloat(storedWeight) : 0;
-  });
+  const [lotes, setLotes] = useState<LoteData[]>([]);
+  const [barracoes, setBarracoes] = useState<BarracaoData[]>([]);
+  const [selectedLoteId, setSelectedLoteId] = useState<string>('');
+  const [pesoAtualCliente, setPesoAtualCliente] = useState<number | ''>('');
   
   const [resultado, setResultado] = useState<GpdResult | null>(null);
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (currentUser?.role === 'client') {
+      const allLotes = getLotes();
+      const allBarracoes = getBarracoes();
+      setLotes(allLotes);
+      setBarracoes(allBarracoes);
+      if (allLotes.length > 0 && !selectedLoteId) {
+        setSelectedLoteId(allLotes[0].id);
+      }
+    }
+  }, [currentUser, selectedLoteId]);
 
   const getPerformanceFeedback = (gpdCalculado: number, gpdReferencia: number): { status: PerformanceStatus, message: string } => {
     if (gpdReferencia <= 0) return { status: 'sem_referencia', message: 'GPD de referência inválido ou não aplicável.' };
@@ -57,111 +68,82 @@ const GpdCalculator: React.FC = () => {
   };
   
   const calculateClientGPD = useCallback(() => {
-    if (idadeAtualCliente <= 0 || pesoAtualCliente <= 0) {
-      setResultado({ 
-        performanceStatus: 'aguardando_dados', 
-        performanceMessage: 'Preencha a idade e o peso atual para ver o comparativo de GPD.',
-        idadeAtualCliente: idadeAtualCliente > 0 ? idadeAtualCliente : undefined,
-        pesoAtualCliente: pesoAtualCliente > 0 ? pesoAtualCliente : undefined,
+    if (!selectedLoteId || !pesoAtualCliente || pesoAtualCliente <= 0) {
+      setResultado({
+        performanceStatus: 'aguardando_dados',
+        performanceMessage: 'Selecione um lote e informe o peso atual médio para ver o comparativo de GPD.',
       });
       return;
     }
 
-    localStorage.setItem('gpdClienteIdade', idadeAtualCliente.toString());
-    localStorage.setItem('gpdClientePeso', pesoAtualCliente.toString());
-
-    const referenceItem = findGpdReference(idadeAtualCliente);
-    if (!referenceItem) {
-      setResultado({ 
-          performanceStatus: 'sem_referencia', 
-          performanceMessage: `Não há dados de referência para ${idadeAtualCliente} dias. A tabela de referência cobre de 15 a 150 dias.`,
-          idadeAtualCliente,
-          pesoAtualCliente,
-      });
+    const lote = lotes.find(l => l.id === selectedLoteId);
+    if (!lote) {
+      setResultado({ performanceStatus: 'erro_calculo', performanceMessage: 'Lote selecionado não encontrado.' });
       return;
     }
 
-    const pesoInicialTeorico = referenceItem.weightRangeStartKg;
-    let diasConsiderados = idadeAtualCliente - referenceItem.ageRangeStart;
-
-    if (pesoAtualCliente < pesoInicialTeorico && diasConsiderados >= 0 ) {
-       setResultado({ 
-          performanceStatus: 'erro_calculo', 
-          performanceMessage: `Peso atual (${pesoAtualCliente}kg) é menor que o peso inicial teórico (${pesoInicialTeorico}kg) para a faixa de ${referenceItem.ageRangeStart}-${referenceItem.ageRangeEnd} dias. Verifique os dados.`,
-          idadeAtualCliente,
-          pesoAtualCliente,
-          pesoInicialTeorico,
-          referenceAgeRange: `${referenceItem.ageRangeStart} - ${referenceItem.ageRangeEnd} dias`,
-       });
-      return;
-    }
+    const dataEntrada = new Date(lote.dataEntrada);
+    const today = new Date();
+    // Ensure we don't compare times, only dates
+    today.setHours(0,0,0,0);
+    const diasPassados = Math.round((today.getTime() - dataEntrada.getTime()) / (1000 * 60 * 60 * 24));
     
-    if (diasConsiderados < 0) { 
-      setResultado({ 
-        performanceStatus: 'erro_calculo', 
-        performanceMessage: 'Erro ao calcular período. Idade informada é anterior ao início da faixa de referência selecionada.',
-        idadeAtualCliente,
-        pesoAtualCliente,
-        referenceAgeRange: `${referenceItem.ageRangeStart} - ${referenceItem.ageRangeEnd} dias`,
+    if (diasPassados < 0) {
+       setResultado({ performanceStatus: 'erro_calculo', performanceMessage: 'A data de entrada do lote está no futuro. Verifique os dados do lote.' });
+       return;
+    }
+
+    const idadeAtual = lote.idadeInicial + diasPassados;
+    const referenceItem = findGpdReference(idadeAtual);
+    
+    if (!referenceItem) {
+      setResultado({
+          performanceStatus: 'sem_referencia',
+          performanceMessage: `Não há dados de referência para a idade atual de ${idadeAtual} dias.`,
+          idadeAtual,
+          pesoAtual: pesoAtualCliente,
+          pesoInicial: lote.pesoInicial,
       });
       return;
     }
 
-    let gpdCalculadoKg: number;
-    let performanceMessageSuffix = "";
-
-    if (diasConsiderados === 0) {
-       if (pesoAtualCliente === pesoInicialTeorico) {
-          gpdCalculadoKg = 0;
-          performanceMessageSuffix = ` Idade (${idadeAtualCliente}d) no início da faixa de referência. GPD é 0 kg/dia pois o peso atual (${pesoAtualCliente}kg) é igual ao inicial teórico. Avalie após alguns dias.`;
-           setResultado({
-                performanceStatus: 'dados_insuficientes',
-                performanceMessage: `Idade (${idadeAtualCliente}d) no início da faixa de referência (${referenceItem.ageRangeStart}d). GPD é 0 kg/dia pois o peso atual (${pesoAtualCliente}kg) é igual ao inicial teórico. Avalie após alguns dias.`,
-                gpdCalculadoKg: 0,
-                gpdReferenciaKg: referenceItem.expectedGpdGrams / 1000,
-                referenceAgeRange: `${referenceItem.ageRangeStart} - ${referenceItem.ageRangeEnd} dias`,
-                idadeAtualCliente, pesoAtualCliente, pesoInicialTeorico, diasConsiderados: 1 
-            });
-            return; // Exit early for this specific message case
-       } else {
-         // If weight has changed but days is 0, we imply gain over a very short period.
-         // Let's assume gain over 1 day to avoid division by zero and give some indication.
-         diasConsiderados = 1; 
-         gpdCalculadoKg = (pesoAtualCliente - pesoInicialTeorico) / diasConsiderados;
-         performanceMessageSuffix = " (Cálculo considera 1 dia de período, pois a idade está no início da faixa de referência).";
-       }
-    } else {
-        gpdCalculadoKg = (pesoAtualCliente - pesoInicialTeorico) / diasConsiderados;
+    if (pesoAtualCliente < lote.pesoInicial) {
+       setResultado({
+          performanceStatus: 'erro_calculo',
+          performanceMessage: `Peso atual (${pesoAtualCliente}kg) é menor que o peso inicial do lote (${lote.pesoInicial}kg). Verifique o peso informado.`,
+          idadeAtual, pesoAtual: pesoAtualCliente, pesoInicial: lote.pesoInicial,
+       });
+       return;
     }
 
+    const diasConsiderados = diasPassados > 0 ? diasPassados : 1; // Avoid division by zero, assume at least 1 day
+    const gpdCalculadoKg = (pesoAtualCliente - lote.pesoInicial) / diasConsiderados;
+    
     const gpdReferenciaKg = referenceItem.expectedGpdGrams / 1000;
     const feedback = getPerformanceFeedback(gpdCalculadoKg, gpdReferenciaKg);
+    let performanceMessage = feedback.message;
+    if (diasPassados === 0 && pesoAtualCliente > lote.pesoInicial) {
+        performanceMessage += " (Cálculo considera 1 dia de período, pois hoje é a data de entrada do lote)."
+    }
     
     setResultado({
       gpdCalculadoKg,
       gpdReferenciaKg,
       performanceStatus: feedback.status,
-      performanceMessage: feedback.message + performanceMessageSuffix,
+      performanceMessage,
       referenceAgeRange: `${referenceItem.ageRangeStart} - ${referenceItem.ageRangeEnd} dias`,
-      idadeAtualCliente,
-      pesoAtualCliente,
-      pesoInicialTeorico,
-      diasConsiderados,
+      idadeAtual,
+      pesoAtual: pesoAtualCliente,
+      pesoInicial: lote.pesoInicial,
+      diasConsiderados: diasConsiderados,
     });
-  }, [idadeAtualCliente, pesoAtualCliente]);
+  }, [selectedLoteId, pesoAtualCliente, lotes]);
 
   useEffect(() => {
     if (currentUser?.role === 'client') {
       calculateClientGPD();
-    } else {
-      // Clear client-specific results if role changes or on initial admin load
-      const storedAge = localStorage.getItem('gpdClienteIdade');
-      const storedWeight = localStorage.getItem('gpdClientePeso');
-      if (!storedAge && !storedWeight) { // Only clear if no stored client data
-        setResultado(null);
-      }
     }
-  }, [currentUser, idadeAtualCliente, pesoAtualCliente, calculateClientGPD]);
+  }, [currentUser, calculateClientGPD]);
 
 
   // Handler for Admin calculation button
@@ -185,9 +167,20 @@ const GpdCalculator: React.FC = () => {
         case 'dados_insuficientes': return <i className="fas fa-info-circle text-sky-500 mr-2 text-xl"></i>;
         case 'aguardando_dados': return <i className="fas fa-hourglass-half text-sky-500 mr-2 text-xl"></i>;
         case 'erro_calculo': return <i className="fas fa-times-circle text-red-500 mr-2 text-xl"></i>;
-        default: return null; // No icon if no specific status or message tied to it
+        default: return null;
     }
   };
+
+  const loteOptions = useMemo(() => {
+    if (lotes.length === 0) return [{ value: '', label: 'Nenhum lote para calcular' }];
+    return lotes.map(lote => {
+      const barracao = barracoes.find(b => b.id === lote.barracaoId);
+      return {
+        value: lote.id,
+        label: `${lote.nome} (${barracao?.nome || 'N/A'})`
+      };
+    });
+  }, [lotes, barracoes]);
 
   return (
     <div>
@@ -195,14 +188,16 @@ const GpdCalculator: React.FC = () => {
       
       {currentUser?.role === 'client' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <Input
-            label="Idade Atual dos Animais (dias):"
-            id="idade-atual-cliente"
-            type="number"
-            min="1"
-            value={idadeAtualCliente > 0 ? idadeAtualCliente : ''}
-            onChange={(e) => setIdadeAtualCliente(parseInt(e.target.value, 10) || 0)}
-            placeholder="Ex: 45"
+          <Select
+            label="Selecione o Lote:"
+            id="select-lote-gpd"
+            options={loteOptions}
+            value={selectedLoteId}
+            onChange={(e) => {
+              setSelectedLoteId(e.target.value);
+              setResultado(null); // Reset result when lote changes
+            }}
+            disabled={lotes.length === 0}
           />
           <Input
             label="Peso Atual Médio do Lote (kg):"
@@ -210,9 +205,10 @@ const GpdCalculator: React.FC = () => {
             type="number"
             step="0.01"
             min="0"
-            value={pesoAtualCliente > 0 ? pesoAtualCliente : ''}
-            onChange={(e) => setPesoAtualCliente(parseFloat(e.target.value) || 0)}
-            placeholder="Ex: 15.5"
+            value={pesoAtualCliente}
+            onChange={(e) => setPesoAtualCliente(parseFloat(e.target.value) || '')}
+            placeholder="Ex: 25.5"
+            disabled={!selectedLoteId}
           />
         </div>
       ) : ( // Admin UI
@@ -247,7 +243,7 @@ const GpdCalculator: React.FC = () => {
       )}
 
       <div className="flex flex-wrap gap-3 items-center">
-        {currentUser?.role !== 'client' && (
+        {currentUser?.role === 'admin' && (
           <Button onClick={handleAdminCalculateGPD} variant="primary">
             <i className="fas fa-calculator mr-2"></i>Calcular GPD (Admin)
           </Button>
@@ -263,12 +259,12 @@ const GpdCalculator: React.FC = () => {
             {currentUser?.role === 'client' ? 'Comparativo de Desempenho' : 'Resultado do Cálculo de GPD'}
           </h3>
           
-          {currentUser?.role === 'client' && resultado.idadeAtualCliente !== undefined && (
+          {currentUser?.role === 'client' && resultado.idadeAtual !== undefined && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm mb-4">
-              <p><strong>Idade Informada:</strong> {resultado.idadeAtualCliente} dias</p>
-              <p><strong>Peso Atual Informado:</strong> {resultado.pesoAtualCliente?.toFixed(2)} kg</p>
+              <p><strong>Idade Atual Estimada:</strong> {resultado.idadeAtual.toFixed(0)} dias</p>
+              <p><strong>Peso Atual Informado:</strong> {resultado.pesoAtual?.toFixed(2)} kg</p>
+              <p><strong>Peso Inicial do Lote:</strong> {resultado.pesoInicial?.toFixed(2)} kg</p>
               {resultado.referenceAgeRange && <p><strong>Faixa de Referência:</strong> {resultado.referenceAgeRange}</p>}
-              {resultado.pesoInicialTeorico !== undefined && <p><strong>Peso Inicial Estimado:</strong> {resultado.pesoInicialTeorico.toFixed(2)} kg</p>}
               {resultado.diasConsiderados !== undefined && <p><strong>Período Considerado:</strong> {resultado.diasConsiderados} dia(s)</p>}
             </div>
           )}
